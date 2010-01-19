@@ -1,0 +1,38 @@
+html{
+    font-family:arial;
+}
+
+#nav{
+    width:250px;
+    border:none;
+    border-right:1px solid black;
+float:left;
+height:100%;
+margin-right:20px;
+}
+
+#content{
+border:1px solid black;
+float:left;
+
+}
+table{
+position:static;
+border:0px solid red;
+}
+
+table td{
+    vertical-align:top;
+}
+
+hr{
+    border:1px solid black;
+}
+
+a{
+    color:blue;
+    text-decoration:none;
+}
+
+ul{ 
+}

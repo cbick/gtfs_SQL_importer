@@ -1,0 +1,65 @@
+GTFS SQL importer
+
+== About ==
+Quick & easy import of GTFS data into a SQL database.
+
+GTFS (General Transit Feed Specification):
+     http://code.google.com/transit/spec/transit_feed_specification.html
+
+List of Public GTFS feeds:
+     http://code.google.com/p/googletransitdatafeed/wiki/PublicFeeds
+
+
+== License ==
+Released under the MIT (X11) license. See LICENSE in this directory.
+
+
+== How To ==
+This is how to import GTFS data into SQL:
+
+1. Initial import
+
+
+cat gtfs_tables.sql \
+      <(python import_gtfs_to_sql.py path/to/gtfs/data/directory) \
+      gtfs_tables_makeindexes.sql \
+      vacuumer.sql \
+  | psql mydbname
+
+Most GTFS data has errors in it, so you will likely encounter an error when 
+running the step above. After fixing the error by manually correcting the GTFS 
+files, you can simply repeat the command (which will likely break again, and 
+so on).
+
+*** If you don't have PostgreSQL, then the python line should be as follows:
+    <(python import_gtfs_to_sql.py path/to/gtfs/data/directory nocopy)
+This will use "INSERT" statements instead of "COPY" statements.
+Also, I believe the vacuumer.sql file is also postgres specific, so omit it if 
+it gives errors.
+
+2. Modification within SQL db
+
+If you are editing data within the SQL database, it is usually much faster to 
+drop all the indexes first and then reapply them afterwards:
+
+psql -f gtfs_tables_dropindexes.sql
+# do your stuff
+psql -f gtfs_tables_makeindexes.sql
+
+
+
+== Test/Demonstration ==
+
+The (CORRECTED -- yes even google's example data has errors) demo feed from the 
+GTFS website is included in this distribution. You should play around with that 
+first to get everything to work and to see how the data gets put into tables.
+
+From this directory (assuming postgres):
+
+createdb testgtfs
+cat gtfs_tables.sql \
+      <(python import_gtfs_to_sql.py sample_feed) \
+      gtfs_tables_makeindexes.sql \
+      vacuumer.sql \
+  | psql testgtfs
+psql testgtfs -c "\dt"
