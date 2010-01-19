@@ -1,0 +1,166 @@
+import csv
+import sys
+
+class SpecialHandler(object):
+  """
+  A SpecialHandler does a little extra special work for a particular
+  database table.
+  """
+  def handleCols(self,columns):
+    return columns
+
+  def handleVals(self,row,header):
+    return row
+
+
+class TripsHandler(SpecialHandler):
+  def handleCols(self,columns):
+    if not 'direction_id' in columns:
+      self.appendDir = True;
+      return columns+['direction_id',]
+
+    self.appendDir = False;
+    return columns;
+
+  def handleVals(self,row,cols):
+    if self.appendDir:
+      row.append("0");
+    else:
+      dirIdx = cols.index('direction_id');
+      if not row[dirIdx]:
+        row[dirIdx] = "0"
+    return row;
+
+
+class StopTimesHandler(SpecialHandler):
+  @staticmethod
+  def timeToSeconds(text):
+    h,m,s = map(int,text.split(":"))
+    return h*60*60 + m*60 + s
+  @staticmethod
+  def secsToTime(s):
+    h,m = divmod(s,60*60)
+    m,s = divmod(m,60)
+    return "%2.2d:%2.2d:%2.2d" % (h,m,s)
+
+  def handleCols(self,cols):
+    return cols+['arrival_time_seconds','departure_time_seconds']
+
+  def handleVals(self,row,cols):
+    arrIdx = cols.index('arrival_time')
+    depIdx = cols.index('departure_time')
+
+    arr_secs = self.timeToSeconds(row[arrIdx]);
+    dep_secs = self.timeToSeconds(row[depIdx]);
+
+    row[arrIdx] = self.secsToTime(arr_secs);
+    row[depIdx] = self.secsToTime(dep_secs);
+
+    return row+[str(arr_secs), str(dep_secs)]
+
+
+class FrequenciesHandler(SpecialHandler):
+  def handleCols(self,cols):
+    return cols+['start_time_seconds','end_time_seconds']
+
+  def handleVals(self,row,cols):
+    startIdx = cols.index('start_time')
+    endIdx = cols.index('end_time')
+
+    start_secs = StopTimesHandler.timeToSeconds(row[startIdx]);
+    end_secs = StopTimesHandler.timeToSeconds(row[endIdx]);
+
+    row[startIdx] = StopTimesHandler.secsToTime(start_secs);
+    row[endIdx] = StopTimesHandler.secsToTime(end_secs);
+
+    return row+[str(start_secs), str(end_secs)]
+
+
+
+
+
+
+def import_file(fname, tablename, handler, COPY=True):
+  """Returns SQL statement iterator"""
+  try:
+    f = open(fname,'r');
+  except:
+    yield "-- file %s doesn't exist" % fname
+    return
+
+  if not handler:
+    handler = SpecialHandler()
+
+  reader = csv.reader(f,dialect=csv.excel);
+  header = handler.handleCols(reader.next());
+  cols = ",".join(header);
+
+  defaultVal = 'NULL';
+
+  if not COPY:  
+    delim = ","
+    insertSQL = "INSERT INTO " + tablename + " (" + cols + ") VALUES (%s);"
+    func = lambda v: ((v and ("'"+v.replace("'","''")+"'")) or defaultVal)
+  else:
+    delim = "|"
+    copySQL = "COPY " + tablename + " (" + cols + ") FROM STDIN WITH NULL AS 'NULL' DELIMITER AS '" + delim + "';";
+    yield copySQL;
+    insertSQL = "%s"
+    func = lambda v: str.strip(v) or defaultVal
+
+  for row in reader:
+    vals = handler.handleVals(row,header);
+    yield insertSQL % delim.join(map(func,vals))
+
+  if COPY:
+    yield "\\.\n"
+  
+
+    
+
+
+
+
+
+
+if __name__ == "__main__":
+  fnames = [
+      "agency" ,
+      "stops" ,
+      "routes" ,
+      "calendar" ,
+      "calendar_dates" ,
+      "fare_attributes" ,
+      "fare_rules" ,
+      "shapes" ,
+      "trips" ,
+      "stop_times" ,
+      "frequencies" ,
+      "transfers" ,
+      "feed_info" ,
+      ];
+
+  handlers = dict.fromkeys(fnames);
+  handlers['stop_times'] = StopTimesHandler();
+  handlers['trips'] = TripsHandler();
+  handlers['frequencies'] = FrequenciesHandler();
+
+  if len(sys.argv) not in (2,3):
+    print "Usage: %s gtfs_data_dir [nocopy]" % sys.argv[0]
+    print "  If nocopy is present, then uses INSERT instead of COPY."
+    sys.exit()
+
+  dirname = sys.argv[1]
+  useCopy = True;
+
+
+  useCopy = not ("nocopy" in sys.argv[2:])
+
+  print "begin;"
+
+  for fname in fnames:
+    for statement in import_file(dirname+"/"+fname+".txt","gtf_"+fname,
+                                 handlers[fname],useCopy):
+      print statement;
+
+  print "commit;"
