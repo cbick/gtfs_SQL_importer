@@ -21,7 +21,8 @@ drop table gtfs_payment_methods cascade;
 drop table gtfs_location_types cascade;
 drop table gtfs_transfer_types cascade;
 
-
+drop table service_combo_ids cascade;
+drop table service_combinations cascade;
 
 begin;
 
