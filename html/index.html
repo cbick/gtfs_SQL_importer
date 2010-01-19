@@ -45,10 +45,16 @@ so on).
 
 <p>
 If you don't have PostgreSQL, then the python line should be as follows:<br>
-<code>&lt;(python import_gtfs_to_sql.py path/to/gtfs/data/directory nocopy)</code><br>
+<code><pre>
+&lt;(python import_gtfs_to_sql.py path/to/gtfs/data/directory nocopy)
+</pre></code>
 This will use "INSERT" statements instead of "COPY" statements.
 Also, I believe the vacuumer.sql file is also postgres specific, so omit it if 
 it gives errors.
+</p>
+
+<p>
+The source download includes the (CORRECTED -- yes even google's example data has errors) demo feed from the GTFS website, in the src/sample_feed directory. You should play around with that first to get everything to work and to see how the data gets put into tables.
 </p>
 
 
