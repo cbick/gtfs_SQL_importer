@@ -1,36 +1,38 @@
-drop table gtf_agency cascade;
-drop table gtf_stops cascade;
-drop table gtf_routes cascade;
-drop table gtf_calendar cascade;
-drop table gtf_calendar_dates cascade;
-drop table gtf_fare_attributes cascade;
-drop table gtf_fare_rules cascade;
-drop table gtf_shapes cascade;
-drop table gtf_trips cascade;
-drop table gtf_stop_times cascade;
-drop table gtf_frequencies cascade;
+drop table if exists gtf_agency;
+drop table if exists gtf_stops;
+drop table if exists gtf_routes;
+drop table if exists gtf_calendar;
+drop table if exists gtf_calendar_dates;
+drop table if exists gtf_fare_attributes;
+drop table if exists gtf_fare_rules;
+drop table if exists gtf_shapes;
+drop table if exists gtf_trips;
+drop table if exists gtf_stop_times;
+drop table if exists gtf_frequencies;
 
-drop table gtf_transfers cascade;
-drop table gtf_feed_info cascade;
+drop table if exists gtf_transfers;
+drop table if exists gtf_feed_info;
 
-drop table gtfs_route_types cascade;
-drop table gtfs_directions cascade;
-drop table gtfs_pickup_dropoff_types cascade;
-drop table gtfs_payment_methods cascade;
+drop table if exists gtfs_route_types;
+drop table if exists gtfs_directions;
+drop table if exists gtfs_pickup_dropoff_types;
+drop table if exists gtfs_payment_methods;
 
-drop table gtfs_location_types cascade;
-drop table gtfs_transfer_types cascade;
+drop table if exists gtfs_location_types;
+drop table if exists gtfs_transfer_types;
 
-drop table service_combo_ids cascade;
-drop table service_combinations cascade;
+drop table if exists service_combo_ids;
+drop table if exists service_combinations;
+
+PRAGMA foreign_keys = OFF;
 
 begin;
 
 create table gtf_agency (
-  agency_id    text ,--PRIMARY KEY,
-  agency_name  text ,--NOT NULL,
-  agency_url   text ,--NOT NULL,
-  agency_timezone    text ,--NOT NULL,
+  agency_id    text PRIMARY KEY,--PRIMARY KEY,
+  agency_name  text NOT NULL,--NOT NULL,
+  agency_url   text NOT NULL,--NOT NULL,
+  agency_timezone    text NOT NULL,--NOT NULL,
   agency_lang  text
   -- unofficial features
   ,
@@ -53,8 +55,8 @@ insert into gtfs_location_types(location_type, description)
 
 
 create table gtf_stops (
-  stop_id    text ,--PRIMARY KEY,
-  stop_name  text , --NOT NULL,
+  stop_id    text PRIMARY KEY,--PRIMARY KEY,
+  stop_name  text NOT NULL, --NOT NULL,
   stop_desc  text,
   stop_lat   double precision,
   stop_lon   double precision,
@@ -73,7 +75,9 @@ create table gtf_stops (
 
   location_type int, --FOREIGN KEY REFERENCES gtfs_location_types(location_type)
   parent_station text, --FOREIGN KEY REFERENCES gtf_stops(stop_id)
-  stop_timezone text
+  stop_timezone text,
+  FOREIGN KEY (location_type) REFERENCES gtfs_location_types(location_type),
+  FOREIGN KEY (parent_station) REFERENCES gtf_stops(stop_id)
 );
 
 -- select AddGeometryColumn( 'gtf_stops', 'location', #{WGS84_LATLONG_EPSG}, 'POINT', 2 );
@@ -95,7 +99,7 @@ insert into gtfs_route_types (route_type, description) values (7, 'Steep Incline
 
 
 create table gtf_routes (
-  route_id    text ,--PRIMARY KEY,
+  route_id    text PRIMARY KEY,--PRIMARY KEY,
   agency_id   text , --REFERENCES gtf_agency(agency_id),
   route_short_name  text DEFAULT '',
   route_long_name   text DEFAULT '',
@@ -103,7 +107,9 @@ create table gtf_routes (
   route_type  int , --REFERENCES gtfs_route_types(route_type),
   route_url   text,
   route_color text,
-  route_text_color  text
+  route_text_color  text,
+  FOREIGN KEY (agency_id) REFERENCES gtf_agency(agency_id),
+  FOREIGN KEY (route_type) REFERENCES gtfs_route_types(route_type)
 );
 
 create table gtfs_directions (
@@ -130,22 +136,23 @@ insert into gtfs_pickup_dropoff_types (type_id, description) values (3,'Driver a
 -- CREATE INDEX gst_trip_id_stop_sequence ON gtf_stop_times (trip_id, stop_sequence);
 
 create table gtf_calendar (
-  service_id   text ,--PRIMARY KEY,
-  monday int , --NOT NULL,
-  tuesday int , --NOT NULL,
-  wednesday    int , --NOT NULL,
-  thursday     int , --NOT NULL,
-  friday int , --NOT NULL,
-  saturday     int , --NOT NULL,
-  sunday int , --NOT NULL,
-  start_date   date , --NOT NULL,
-  end_date     date  --NOT NULL
+  service_id   text PRIMARY KEY,--PRIMARY KEY,
+  monday int NOT NULL, --NOT NULL,
+  tuesday int NOT NULL, --NOT NULL,
+  wednesday    int NOT NULL, --NOT NULL,
+  thursday     int NOT NULL, --NOT NULL,
+  friday int NOT NULL, --NOT NULL,
+  saturday     int NOT NULL, --NOT NULL,
+  sunday int NOT NULL, --NOT NULL,
+  start_date   date NOT NULL, --NOT NULL,
+  end_date     date NOT NULL --NOT NULL
 );
 
 create table gtf_calendar_dates (
   service_id     text , --REFERENCES gtf_calendar(service_id),
-  date     date , --NOT NULL,
-  exception_type int  --NOT NULL
+  date     date NOT NULL, --NOT NULL,
+  exception_type int  NOT NULL--NOT NULL
+  -- above reference not in makeindices.sql
 );
 
 -- The following two tables are not in the spec, but they make dealing with dates and services easier
@@ -170,13 +177,15 @@ insert into gtfs_payment_methods (payment_method, description) values (1,'Prepay
 
 
 create table gtf_fare_attributes (
-  fare_id     text ,--PRIMARY KEY,
-  price double precision , --NOT NULL,
-  currency_type     text , --NOT NULL,
+  fare_id     text PRIMARY KEY,--PRIMARY KEY,
+  price double precision NOT NULL, --NOT NULL,
+  currency_type     text NOT NULL, --NOT NULL,
   payment_method    int , --REFERENCES gtfs_payment_methods,
   transfers   int,
   transfer_duration int,
-  agency_id text  --REFERENCES gtf_agency(agency_id)
+  agency_id text,  --REFERENCES gtf_agency(agency_id),
+  FOREIGN KEY (payment_method) REFERENCES gtfs_payment_methods(payment_method),
+  FOREIGN KEY (agency_id) REFERENCES gtf_agency(agency_id)
 );
 
 create table gtf_fare_rules (
@@ -187,28 +196,32 @@ create table gtf_fare_rules (
   contains_id int 
   -- unofficial features
   ,
-  service_id text -- REFERENCES gtf_calendar(service_id) ?
+  service_id text, -- REFERENCES gtf_calendar(service_id) ?
+  FOREIGN KEY (fare_id) REFERENCES gtf_fare_attributes(fare_id),
+  FOREIGN KEY (route_id) REFERENCES gtf_routes(route_id)
+
 );
 
 create table gtf_shapes (
-  shape_id    text , --NOT NULL,
-  shape_pt_lat double precision , --NOT NULL,
-  shape_pt_lon double precision , --NOT NULL,
-  shape_pt_sequence int , --NOT NULL,
+  shape_id    text NOT NULL, --NOT NULL,
+  shape_pt_lat double precision NOT NULL, --NOT NULL,
+  shape_pt_lon double precision NOT NULL, --NOT NULL,
+  shape_pt_sequence int NOT NULL, --NOT NULL,
   shape_dist_traveled double precision
 );
 
 create table gtf_trips (
   route_id text , --REFERENCES gtf_routes(route_id),
   service_id    text , --REFERENCES gtf_calendar(service_id),
-  trip_id text ,--PRIMARY KEY,
+  trip_id text PRIMARY KEY,--PRIMARY KEY,
   trip_headsign text,
-  direction_id  int , --REFERENCES gtfs_directions(direction_id),
+  direction_id  int NOT NULL, --NOT NULL --REFERENCES gtfs_directions(direction_id),
   block_id text,
-  shape_id text
-  -- unofficial features
-  ,  
-  trip_short_name text
+  shape_id text,
+  -- unofficial features  
+  trip_short_name text,
+  FOREIGN KEY (route_id) REFERENCES gtf_routes(route_id),
+  FOREIGN KEY (direction_id) REFERENCES gtfs_directions(direction_id)
 );
 
 create table gtf_stop_times (
@@ -216,7 +229,7 @@ create table gtf_stop_times (
   arrival_time text, -- CHECK (arrival_time LIKE '__:__:__'),
   departure_time text, -- CHECK (departure_time LIKE '__:__:__'),
   stop_id text , --REFERENCES gtf_stops(stop_id),
-  stop_sequence int , --NOT NULL,
+  stop_sequence int NOT NULL, --NOT NULL,
   stop_headsign text,
   pickup_type   int , --REFERENCES gtfs_pickup_dropoff_types(type_id),
   drop_off_type int , --REFERENCES gtfs_pickup_dropoff_types(type_id),
@@ -229,22 +242,30 @@ create table gtf_stop_times (
   -- the following are not in the spec
   ,
   arrival_time_seconds int, 
-  departure_time_seconds int
+  departure_time_seconds int,
 
+  FOREIGN KEY (trip_id) REFERENCES gtf_trips(trip_id),
+  FOREIGN KEY (stop_id) REFERENCES gtf_stops(stop_id),
+  FOREIGN KEY (pickup_type) REFERENCES gtfs_pickup_dropoff_types(type_id),
+  FOREIGN KEY (drop_off_type) REFERENCES gtfs_pickup_dropoff_types(type_id),
+  CHECK (arrival_time LIKE '__:__:__'),
+  CHECK (departure_time LIKE '__:__:__')
 );
 
---create index arr_time_index on gtf_stop_times(arrival_time_seconds);
---create index dep_time_index on gtf_stop_times(departure_time_seconds);
+create index arr_time_index on gtf_stop_times(arrival_time_seconds);
+create index dep_time_index on gtf_stop_times(departure_time_seconds);
+create index stop_seq_index on gtf_stop_times(trip_id,stop_sequence);
 
 -- select AddGeometryColumn( 'gtf_shapes', 'shape', #{WGS84_LATLONG_EPSG}, 'LINESTRING', 2 );
 
 create table gtf_frequencies (
   trip_id     text , --REFERENCES gtf_trips(trip_id),
-  start_time  text , --NOT NULL,
-  end_time    text , --NOT NULL,
-  headway_secs int , --NOT NULL
+  start_time  text NOT NULL, --NOT NULL,
+  end_time    text NOT NULL, --NOT NULL,
+  headway_secs int NOT NULL, --NOT NULL
   start_time_seconds int,
-  end_time_seconds int
+  end_time_seconds int,
+  FOREIGN KEY (trip_id) REFERENCES gtf_trips(trip_id)
 );
 
 
@@ -276,7 +297,13 @@ create table gtf_transfers (
   min_transfer_time int,
   from_route_id text, --REFERENCES gtf_routes(route_id)
   to_route_id text, --REFERENCES gtf_routes(route_id)
-  service_id text --REFERENCES gtf_calendar(service_id) ?
+  service_id text, --REFERENCES gtf_calendar(service_id) ?
+  FOREIGN KEY (from_stop_id) REFERENCES gtf_stops(stop_id),
+
+  FOREIGN KEY (to_stop_id) REFERENCES gtf_stops(stop_id),
+  FOREIGN KEY (transfer_type) REFERENCES gtfs_transfer_types(transfer_type),
+  FOREIGN KEY (from_route_id) REFERENCES gtf_routes(route_id),
+  FOREIGN KEY (to_route_id) REFERENCES gtf_routes(route_id)
 );
 
 

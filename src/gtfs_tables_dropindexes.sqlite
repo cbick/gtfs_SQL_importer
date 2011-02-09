@@ -1,0 +1,5 @@
+-- sqlite doesn't allow modification of table constraints after creation
+
+drop index arr_time_index;
+drop index dep_time_index;
+drop index stop_seq_index;
