@@ -25,44 +25,71 @@ This is a small utility for quickly and easily importing GTFS data into a SQL (i
 
 
 <h3>Using GTFS SQL Importer</h3>
-The code below shows how to import some data from a bash prompt.
+<p>The code below shows how to import some data from a bash prompt.</p>
+
+<hr />
+
+<h4>PostgreSQL</h4>
+
 <code><pre>
-
-cat gtfs_tables.sql \
-      &lt;(python import_gtfs_to_sql.py path/to/gtfs/data/directory) \
-      gtfs_tables_makeindexes.sql \
-      vacuumer.sql \
-  | psql mydbname myusername
-
+    cat gtfs_tables.sql \
+    &lt;(python import_gtfs_to_sql.py path/to/gtfs/data/directory) \
+    gtfs_tables_makeindexes.sql \
+    vacuumer.sql \
+    | psql mydbname myusername
 </pre></code>
 
-<p>
-Most GTFS data has errors in it, so you will likely encounter an error when 
-running the step above. After fixing the error by manually correcting the GTFS 
-files, you can simply repeat the command (which will likely break again, and 
-so on).
-</p>
+<hr />
 
-<p>
-If you don't have PostgreSQL, then the python line should be as follows:<br>
+<h4>SQLite</h4>
+
 <code><pre>
-&lt;(python import_gtfs_to_sql.py path/to/gtfs/data/directory nocopy)
+    cat gtfs_tables.sqlite \
+    &lt;(python import_gtfs_to_sql.py path/to/gtfs/data/directory nocopy) \
+    | sqlite3 ANewDatabase.db
 </pre></code>
-This will use "INSERT" statements instead of "COPY" statements.
-Also, I believe the vacuumer.sql file is also postgres specific, so omit it if 
-it gives errors.
+
+SQLite compatibility contributed by Justin Jones. See README for details.
+<hr />
+
+<h4>Other Non-PostgreSQL</h4>
+<p>
+  If you don't have PostgreSQL, then the python line should be as follows:<br>
+  <code><pre>
+      &lt;(python import_gtfs_to_sql.py path/to/gtfs/data/directory nocopy)
+  </pre></code>
+  This will use "INSERT" statements instead of "COPY" statements.
+  The vacuumer.sql file is also postgres specific and should be omitted.
 </p>
 
+<hr />
+
 <p>
-The source download includes the (CORRECTED -- yes even google's example data has errors) demo feed from the GTFS website, in the src/sample_feed directory. You should play around with that first to get everything to work and to see how the data gets put into tables.
+  Most GTFS data has errors in it, so you will likely encounter an error when 
+  running the above steps. After fixing the error by manually correcting the GTFS 
+  files, you can simply repeat the command (which will likely break again, and 
+  so on).
 </p>
+
+
+<p>
+  The source download includes a corrected version of the demo feed from the 
+  GTFS website, in the src/sample_feed directory. You should play around with 
+  that first to get everything to work and to see how the data gets put into 
+  tables.
+</p>
+
+
 
 
 <h3>Links</h3>
 
 <a href="http://code.google.com/transit/spec/transit_feed_specification.html">GTFS (General Transit Feed Specification)</a><br>
 
+<a href="http://www.gtfs-data-exchange.com/">GTFS Data Exchange</a><br>
+
 <a href="http://code.google.com/p/googletransitdatafeed/wiki/PublicFeeds">List of Public GTFS feeds</a>
+
 
 </tr></td></table>
 </body>
