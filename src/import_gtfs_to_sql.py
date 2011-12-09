@@ -112,7 +112,7 @@ def import_file(fname, tablename, handler, COPY=True):
     handler = SpecialHandler()
 
   reader = csv.reader(f,dialect=csv.excel);
-  header = handler.handleCols(reader.next());
+  header = handler.handleCols([c.strip() for c in reader.next()]);
   cols = ",".join(header);
 
   defaultVal = 'NULL';
