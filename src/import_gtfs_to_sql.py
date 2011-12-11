@@ -179,7 +179,7 @@ if __name__ == "__main__":
   print "begin;"
 
   for fname in fnames:
-    for statement in import_file(dirname+"/"+fname+".txt","gtf_"+fname,
+    for statement in import_file(dirname+"/"+fname+".txt","gtfs_"+fname,
                                  handlers[fname],useCopy):
       print statement;
 
