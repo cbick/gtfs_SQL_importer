@@ -59,6 +59,7 @@ class StopTimesHandler(SpecialHandler):
   def timeToSeconds(text):
     h,m,s = map(int,text.split(":"))
     return h*60*60 + m*60 + s
+
   @staticmethod
   def secsToTime(s):
     h,m = divmod(s,60*60)
@@ -72,11 +73,19 @@ class StopTimesHandler(SpecialHandler):
     arrIdx = cols.index('arrival_time')
     depIdx = cols.index('departure_time')
 
-    arr_secs = self.timeToSeconds(row[arrIdx]);
-    dep_secs = self.timeToSeconds(row[depIdx]);
+    # Arrival/departure times are only required for time points. Stops that
+    # aren't time points have an empty string as the time, so just keep those
+    # field values the same, and set the {arr,dep}_secs fields to the empty
+    # string, which will get replaced with NULL during SQL generation.
+    arr_secs = dep_secs = ""
 
-    row[arrIdx] = self.secsToTime(arr_secs);
-    row[depIdx] = self.secsToTime(dep_secs);
+    if row[arrIdx]:
+      arr_secs = self.timeToSeconds(row[arrIdx])
+      row[arrIdx] = self.secsToTime(arr_secs)
+
+    if row[depIdx]:
+      dep_secs = self.timeToSeconds(row[depIdx]);
+      row[depIdx] = self.secsToTime(dep_secs)
 
     return row+[str(arr_secs), str(dep_secs)]
 
