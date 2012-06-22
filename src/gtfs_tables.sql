@@ -19,6 +19,7 @@ drop table gtfs_pickup_dropoff_types cascade;
 drop table gtfs_payment_methods cascade;
 
 drop table gtfs_location_types cascade;
+drop table gtfs_wheelchair_boardings cascade;
 drop table gtfs_transfer_types cascade;
 
 drop table service_combo_ids cascade;
@@ -31,14 +32,12 @@ create table gtf_agency (
   agency_name  text ,--NOT NULL,
   agency_url   text ,--NOT NULL,
   agency_timezone    text ,--NOT NULL,
-  agency_lang  text
-  -- unofficial features
-  ,
+  agency_lang  text,
   agency_phone text,
-  fare_url text
+  agency_fare_url text
 );
 
---unoffical table, related to gtf_stops(location_type)
+--related to gtf_stops(location_type)
 create table gtfs_location_types (
   location_type int PRIMARY KEY,
   description text
@@ -51,6 +50,19 @@ insert into gtfs_location_types(location_type, description)
 insert into gtfs_location_types(location_type, description) 
        values (2,'station entrance');
 
+--related to gtf_stops(wheelchair_boarding)
+create table gtfs_wheelchair_boardings (
+  wheelchair_boarding int PRIMARY KEY,
+  description text
+);
+
+insert into gtfs_wheelchair_boardings(wheelchair_boarding, description)
+       values (0, 'No accessibility information available for the stop');
+insert into gtfs_wheelchair_boardings(wheelchair_boarding, description)
+       values (1, 'At least some vehicles at this stop can be boarded by a rider in a wheelchair');
+insert into gtfs_wheelchair_boardings(wheelchair_boarding, description)
+       values (2, 'Wheelchair boarding is not possible at this stop');
+
 
 create table gtf_stops (
   stop_id    text ,--PRIMARY KEY,
@@ -58,14 +70,17 @@ create table gtf_stops (
   stop_desc  text,
   stop_lat   double precision,
   stop_lon   double precision,
-  zone_id    int,
+  zone_id    text,
   stop_url   text,
-  stop_code  text
-  -- unofficial features
-  ,
+  stop_code  text,
   location_type int, --FOREIGN KEY REFERENCES gtfs_location_types(location_type)
   parent_station text, --FOREIGN KEY REFERENCES gtf_stops(stop_id)
-  stop_timezone text
+  stop_timezone text,
+  wheelchair_boarding int --FOREIGN KEY REFERENCES gtfs_wheelchair_boardings(wheelchair_boarding)
+  -- Unofficial fields
+  ,
+  direction text,
+  position text
 );
 
 -- select AddGeometryColumn( 'gtf_stops', 'location', #{WGS84_LATLONG_EPSG}, 'POINT', 2 );
@@ -167,16 +182,18 @@ create table gtf_fare_attributes (
   currency_type     text , --NOT NULL,
   payment_method    int , --REFERENCES gtfs_payment_methods,
   transfers   int,
-  transfer_duration int,
+  transfer_duration int
+  -- unofficial features
+  ,
   agency_id text  --REFERENCES gtf_agency(agency_id)
 );
 
 create table gtf_fare_rules (
   fare_id     text , --REFERENCES gtf_fare_attributes(fare_id),
   route_id    text , --REFERENCES gtf_routes(route_id),
-  origin_id   int ,
-  destination_id int ,
-  contains_id int 
+  origin_id   text ,
+  destination_id text ,
+  contains_id text 
   -- unofficial features
   ,
   service_id text -- REFERENCES gtf_calendar(service_id) ?
@@ -197,10 +214,10 @@ create table gtf_trips (
   trip_headsign text,
   direction_id  int , --REFERENCES gtfs_directions(direction_id),
   block_id text,
-  shape_id text
+  shape_id text,  
+  trip_short_name text,
   -- unofficial features
-  ,  
-  trip_short_name text
+  trip_type text
 );
 
 create table gtf_stop_times (
@@ -235,15 +252,13 @@ create table gtf_frequencies (
   start_time  text , --NOT NULL,
   end_time    text , --NOT NULL,
   headway_secs int , --NOT NULL
+  exact_times int,
   start_time_seconds int,
   end_time_seconds int
 );
 
 
 
-
-
--- unofficial tables
 
 
 create table gtfs_transfer_types (
@@ -266,6 +281,7 @@ create table gtf_transfers (
   to_stop_id text, --REFERENCES gtf_stops(stop_id)
   transfer_type int, --REFERENCES gtfs_transfer_types(transfer_type)
   min_transfer_time int,
+  -- Unofficial fields
   from_route_id text, --REFERENCES gtf_routes(route_id)
   to_route_id text, --REFERENCES gtf_routes(route_id)
   service_id text --REFERENCES gtf_calendar(service_id) ?
@@ -277,7 +293,9 @@ create table gtf_feed_info (
   feed_publisher_url text,
   feed_timezone text,
   feed_lang text,
-  feed_version text
+  feed_version text,
+  feed_start_date text,
+  feed_end_date text
 );
 
 

@@ -32,6 +32,27 @@ class SpecialHandler(object):
   def handleVals(self,row,header):
     return row
 
+class AgencyHandler(SpecialHandler):
+  def handleCols(self, columns):
+    # Column name was originally proposed as fare_url
+    if 'fare_url' in columns:
+      colIdx = columns.index('fare_url');
+      columns[colIdx] = 'agency_fare_url';
+
+    if not 'agency_id' in columns:
+      self.appendId = True
+      self.ix = 0
+      columns = columns + ['agency_id',]
+    else:
+      self.appendId = False
+
+    return columns
+
+  def handleVals(self, row, cols):
+    if self.appendId:
+      row.append(str(self.ix))
+      self.ix += 1
+    return row
 
 class TripsHandler(SpecialHandler):
   def handleCols(self,columns):
@@ -161,6 +182,7 @@ if __name__ == "__main__":
       ];
 
   handlers = dict.fromkeys(fnames);
+  handlers['agency'] = AgencyHandler();
   handlers['stop_times'] = StopTimesHandler();
   handlers['trips'] = TripsHandler();
   handlers['frequencies'] = FrequenciesHandler();
