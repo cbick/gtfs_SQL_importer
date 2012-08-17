@@ -122,6 +122,7 @@ ALTER TABLE gtfs_stop_times
 create index arr_time_index on gtfs_stop_times(arrival_time_seconds);
 create index dep_time_index on gtfs_stop_times(departure_time_seconds);
 create index stop_seq_index on gtfs_stop_times(trip_id,stop_sequence);
+create index shape_seq_index on gtfs_shapes(shape_id,shape_pt_sequence);
 
 ALTER TABLE gtfs_frequencies ADD CONSTRAINT freq_tid_fkey
       FOREIGN KEY (trip_id)
