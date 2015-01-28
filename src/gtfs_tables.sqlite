@@ -311,6 +311,8 @@ create table gtfs_feed_info (
   feed_publisher_name text,
   feed_publisher_url text,
   feed_timezone text,
+  feed_start_date text,
+  feed_end_date text,  
   feed_lang text,
   feed_version text
 );
