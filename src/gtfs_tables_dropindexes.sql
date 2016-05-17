@@ -1,6 +1,7 @@
 drop index arr_time_index;
 drop index dep_time_index;
 drop index stop_seq_index;
+drop index shape_seq_index;
 
 ALTER TABLE gtfs_agency DROP CONSTRAINT agency_name_pkey CASCADE;
 ALTER TABLE gtfs_stops DROP CONSTRAINT stops_id_pkey CASCADE;
