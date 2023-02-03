@@ -78,7 +78,7 @@ class TripsHandler(SpecialHandler):
 class StopTimesHandler(SpecialHandler):
   @staticmethod
   def timeToSeconds(text):
-    h,m,s = map(int,text.split(":"))
+    h,m,s = list(map(int,text.split(":")))
     return h*60*60 + m*60 + s
 
   @staticmethod
@@ -144,7 +144,7 @@ def import_file(fname, tablename, handler, COPY=True):
     handler = SpecialHandler()
 
   reader = csv.reader(f,dialect=csv.excel);
-  header = handler.handleCols([c.strip() for c in reader.next()]);
+  header = handler.handleCols([c.strip() for c in next(reader)]);
   cols = ",".join(header);
 
   defaultVal = 'NULL';
@@ -199,8 +199,8 @@ if __name__ == "__main__":
   handlers['frequencies'] = FrequenciesHandler();
 
   if len(sys.argv) not in (2,3):
-    print "Usage: %s gtfs_data_dir [nocopy]" % sys.argv[0]
-    print "  If nocopy is present, then uses INSERT instead of COPY."
+    print("Usage: %s gtfs_data_dir [nocopy]" % sys.argv[0])
+    print("  If nocopy is present, then uses INSERT instead of COPY.")
     sys.exit()
 
   dirname = sys.argv[1]
@@ -209,11 +209,11 @@ if __name__ == "__main__":
 
   useCopy = not ("nocopy" in sys.argv[2:])
 
-  print "begin;"
+  print("begin;")
 
   for fname in fnames:
     for statement in import_file(dirname+"/"+fname+".txt","gtfs_"+fname,
                                  handlers[fname],useCopy):
-      print statement;
+      print(statement);
 
-  print "commit;"
+  print("commit;")
