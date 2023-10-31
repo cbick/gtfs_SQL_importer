@@ -1,17 +1,18 @@
 -- Add spatial support for PostGIS databases only
 
 -- Drop everything first
-DROP TABLE gtfs_shape_geoms CASCADE;
-
+DROP TABLE IF EXISTS gtfs_shape_geoms CASCADE;
+CREATE EXTENSION IF NOT EXISTS postgis;
 BEGIN;
 -- Add the_geom column to the gtfs_stops table - a 2D point geometry
-SELECT AddGeometryColumn('gtfs_stops', 'the_geom', 4326, 'POINT', 2);
+--SELECT AddGeometryColumn('gtfs_stops', 'the_geom', 4326, 'POINT', 2);
+ALTER TABLE gtfs_stops ADD COLUMN the_geom geometry(POINT,4326);
 
 -- Update the the_geom column
 UPDATE gtfs_stops SET the_geom = ST_SetSRID(ST_MakePoint(stop_lon, stop_lat), 4326);
 
 -- Create spatial index
-CREATE INDEX "gtfs_stops_the_geom_gist" ON "gtfs_stops" using gist ("the_geom" gist_geometry_ops);
+--CREATE INDEX "gtfs_stops_the_geom_gist" ON "gtfs_stops" using gist ("the_geom" gist_geometry_ops);
 
 -- Create new table to store the shape geometries
 CREATE TABLE gtfs_shape_geoms (
@@ -19,8 +20,8 @@ CREATE TABLE gtfs_shape_geoms (
 );
 
 -- Add the_geom column to the gtfs_shape_geoms table - a 2D linestring geometry
-SELECT AddGeometryColumn('gtfs_shape_geoms', 'the_geom', 4326, 'LINESTRING', 2);
-
+--SELECT AddGeometryColumn('gtfs_shape_geoms', 'the_geom', 4326, 'LINESTRING', 2);
+ALTER TABLE gtfs_shape_geoms ADD COLUMN the_geom geometry(LINESTRING,4326);
 -- Populate gtfs_shape_geoms
 INSERT INTO gtfs_shape_geoms
 SELECT shape.shape_id, ST_SetSRID(ST_MakeLine(shape.the_geom), 4326) As new_geom
@@ -32,6 +33,6 @@ SELECT shape.shape_id, ST_SetSRID(ST_MakeLine(shape.the_geom), 4326) As new_geom
 GROUP BY shape.shape_id;
 
 -- Create spatial index
-CREATE INDEX "gtfs_shape_geoms_the_geom_gist" ON "gtfs_shape_geoms" using gist ("the_geom" gist_geometry_ops);
+--CREATE INDEX "gtfs_shape_geoms_the_geom_gist" ON "gtfs_shape_geoms" using gist ("the_geom" gist_geometry_ops);
 
 COMMIT;

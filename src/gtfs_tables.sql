@@ -226,6 +226,7 @@ create table gtfs_trips (
   block_id text,
   shape_id text,  
   trip_short_name text,
+  wheelchair_accessible text,
   -- unofficial features
   trip_type text
 );
